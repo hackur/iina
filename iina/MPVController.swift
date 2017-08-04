@@ -529,7 +529,7 @@ class MPVController: NSObject {
       if playerCore.info.fileLoading {
         receivedEndFileWhileLoading = true
       } else {
-        playerCore.info.currentFileIsOpenedManually = false
+        playerCore.info.shouldAutoLoadFiles = false
       }
       break
 
