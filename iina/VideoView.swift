@@ -98,7 +98,7 @@ class VideoView: NSView {
   }
   
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-    return playerCore.openFilesFromPasteboard(sender)
+    return playerCore.openFromPasteboard(sender)
   }
   
 }

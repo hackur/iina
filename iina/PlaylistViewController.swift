@@ -173,20 +173,16 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
 
 
   func tableView(_ tableView: NSTableView, validateDrop info: NSDraggingInfo, proposedRow row: Int, proposedDropOperation dropOperation: NSTableViewDropOperation) -> NSDragOperation {
+    if info.draggingSource() != nil { return [] }
     let pasteboard = info.draggingPasteboard()
-
     playlistTableView.setDropRow(row, dropOperation: .above)
     if info.draggingSource() as? NSTableView === tableView {
       return .move
     }
-    if let fileNames = pasteboard.propertyList(forType: NSFilenamesPboardType) as? [String] {
-      for path in fileNames {
-        let ext = (path as NSString).pathExtension.lowercased()
-        if Utility.playableFileExt.contains(ext) {
-          return .copy
-        }
+    if let paths = pasteboard.propertyList(forType: NSFilenamesPboardType) as? [String] {
+      if playerCore.checkPlayableFiles(paths).0 {
+        return .copy
       }
-      return []
     }
     return []
   }
@@ -237,17 +233,12 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
         playerCore.addToPlaylist(paths: after, at: 1)
         playerCore.addToPlaylist(paths: before, at: 0)
       }
-    } else if let fileNames = pasteboard.propertyList(forType: NSFilenamesPboardType) as? [String] {
-      let validMedia = fileNames.filter {
-        let ext = ($0 as NSString).pathExtension.lowercased()
-        return Utility.playableFileExt.contains(ext)
-      }
-      let added = validMedia.count
-      if added == 0 {
+    } else if let paths = pasteboard.propertyList(forType: NSFilenamesPboardType) as? [String] {
+      let (_, playableFiles) = playerCore.checkPlayableFiles(paths, returnPaths: true)
+      if playableFiles.count == 0 {
         return false
       }
-      playerCore.addToPlaylist(paths: validMedia, at: row)
-      playerCore.sendOSD(.addToPlaylist(added))
+      playerCore.addToPlaylist(paths: playableFiles, at: row)
     } else {
       return false
     }
@@ -265,15 +256,14 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
   // MARK: - IBActions
 
   @IBAction func addToPlaylistBtnAction(_ sender: AnyObject) {
-    Utility.quickMultipleOpenPanel(title: "Add to playlist") { urls in
-      for url in urls {
-        if url.isFileURL {
-          self.playerCore.addToPlaylist(url.path)
-        }
+    Utility.quickMultipleOpenPanel(title: "Add to playlist", canChooseDir: true) { urls in
+      let paths = urls.map { $0.path }
+      let (_, playableFiles) = self.playerCore.checkPlayableFiles(paths, returnPaths: true)
+      if playableFiles.count != 0 {
+        self.playerCore.addToPlaylist(paths: playableFiles, at: self.playerCore.info.playlist.count)
+        self.playerCore.mainWindow.playlistView.reloadData(playlist: true, chapters: false)
+        self.playerCore.sendOSD(.addToPlaylist(playableFiles.count))
       }
-      let fileUrlCount = urls.filter { return $0.isFileURL }.count
-      self.playerCore.sendOSD(.addToPlaylist(fileUrlCount))
-      self.reloadData(playlist: true, chapters: false)
     }
   }
 
@@ -499,7 +489,7 @@ class PlaylistViewController: NSViewController, NSTableViewDataSource, NSTableVi
     guard let selectedRows = selectedRows, let index = selectedRows.first else { return }
     let filename = playerCore.info.playlist[index].filename
     let fileURL = URL(fileURLWithPath: filename).deletingLastPathComponent()
-    Utility.quickMultipleOpenPanel(title: NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File"), dir: fileURL) { subURLs in
+    Utility.quickMultipleOpenPanel(title: NSLocalizedString("alert.choose_media_file.title", comment: "Choose Media File"), dir: fileURL, canChooseDir: true) { subURLs in
       for subURL in subURLs {
         guard Utility.supportedFileExt[.sub]!.contains(subURL.pathExtension.lowercased()) else { return }
         self.playerCore.info.matchedSubs.safeAppend(subURL, for: filename)
