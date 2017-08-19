@@ -11,7 +11,7 @@ import Cocoa
 
 class VideoView: NSView {
 
-  weak var playerCore: PlayerCore!
+  weak var player: PlayerCore!
 
   lazy var videoLayer: ViewLayer = {
     let layer = ViewLayer()
@@ -94,11 +94,11 @@ class VideoView: NSView {
   // MARK: Drag and drop
   
   override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
-    return playerCore.acceptFromPasteboard(sender)
+    return player.acceptFromPasteboard(sender)
   }
   
   override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
-    return playerCore.openFromPasteboard(sender)
+    return player.openFromPasteboard(sender)
   }
   
 }

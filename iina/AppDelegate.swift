@@ -77,7 +77,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     NSColorPanel.shared().showsAlpha = true
 
     // other
-    if #available(OSX 10.12.2, *) {
+    if #available(macOS 10.12.2, *) {
       NSApp.isAutomaticCustomizeTouchBarMenuItemEnabled = false
       NSWindow.allowsAutomaticWindowTabbing = false
     }
@@ -101,7 +101,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   private func showWelcomeWindow() {
     let _ = PlayerCore.first
-    let actionRawValue = UserDefaults.standard.integer(forKey: Preference.Key.actionAfterLaunch)
+    let actionRawValue = Preference.integer(for: .actionAfterLaunch)
     let action: Preference.ActionAfterLaunch = Preference.ActionAfterLaunch(rawValue: actionRawValue) ?? .welcomeWindow
     switch action {
     case .welcomeWindow:
@@ -123,7 +123,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
   func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
     guard PlayerCore.active.mainWindow.isWindowLoaded || PlayerCore.active.initialWindow.isWindowLoaded else { return false }
-    return UserDefaults.standard.bool(forKey: Preference.Key.quitWhenNoOpenedWindow)
+    return Preference.bool(for: .quitWhenNoOpenedWindow)
   }
 
   func applicationShouldTerminate(_ sender: NSApplication) -> NSApplicationTerminateReply {
@@ -156,7 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     let url = URL(fileURLWithPath: filename)
-    if UserDefaults.standard.bool(forKey: Preference.Key.recordRecentFiles) {
+    if Preference.bool(for: .recordRecentFiles) {
       NSDocumentController.shared().noteNewRecentDocumentURL(url)
     }
     PlayerCore.activeOrNew.openURL(url, isNetworkResource: false)
@@ -210,14 +210,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     panel.canChooseDirectories = true
     panel.allowsMultipleSelection = true
     if panel.runModal() == NSFileHandlingPanelOKButton {
-      if UserDefaults.standard.bool(forKey: Preference.Key.recordRecentFiles) {
+      if Preference.bool(for: .recordRecentFiles) {
         for url in panel.urls {
           NSDocumentController.shared().noteNewRecentDocumentURL(url)
         }
       }
       let isAlternative = (sender as? NSMenuItem)?.tag == alternativeMenuItemTag
-      let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternative)
-      if let openedFile = playerCore.openURLs(panel.urls), openedFile == 0 {
+      let player = PlayerCore.activeOrNewForMenuAction(isAlternative: isAlternative)
+      if let openedFile = player.openURLs(panel.urls), openedFile == 0 {
         Utility.showAlert("Nothing to open")
       }
     }
@@ -235,8 +235,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let response = panel.runModal()
     if response == NSAlertFirstButtonReturn {
       if let url = inputViewController.url {
-        let playerCore = PlayerCore.activeOrNewForMenuAction(isAlternative: sender.tag == alternativeMenuItemTag)
-        playerCore.openURL(url, isNetworkResource: true)
+        let player = PlayerCore.activeOrNewForMenuAction(isAlternative: sender.tag == alternativeMenuItemTag)
+        player.openURL(url, isNetworkResource: true)
       } else {
         Utility.showAlert("wrong_url_format")
       }
@@ -248,7 +248,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
   }
 
   @IBAction func menuOpenScreenshotFolder(_ sender: NSMenuItem) {
-    let screenshotPath = UserDefaults.standard.string(forKey: Preference.Key.screenshotFolder)!
+    let screenshotPath = Preference.string(for: .screenshotFolder)!
     let absoluteScreenshotPath = NSString(string: screenshotPath).expandingTildeInPath
     let url = URL(fileURLWithPath: absoluteScreenshotPath, isDirectory: true)
       NSWorkspace.shared().open(url)
