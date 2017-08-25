@@ -196,7 +196,7 @@ extension NSPoint {
 
 extension Array {
   func at(_ pos: Int) -> Element? {
-    if pos < count {
+    if pos >= 0 && pos < count {
       return self[pos]
     } else {
       return nil
@@ -234,6 +234,12 @@ extension Int {
     if self < min { value = min }
     if self > max { value = max }
     return value
+  }
+}
+
+extension Float {
+  func toStr() -> String {
+    return "\(self)"
   }
 }
 
