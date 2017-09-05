@@ -507,7 +507,7 @@ class QuickSettingViewController: NSViewController, NSTableViewDataSource, NSTab
 
   @IBAction func cropBtnAcction(_ sender: AnyObject) {
     mainWindow.hideSideBar {
-      self.mainWindow.enterInteractiveMode()
+      self.mainWindow.enterInteractiveMode(selectWholeVideoByDefault: true)
     }
   }
 
